@@ -1,0 +1,2 @@
+Export collection
+mongoexport -d NewsAnalyzer -c <collection_name> -o <outputfile> --jsonArray --pretty

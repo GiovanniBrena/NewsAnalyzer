@@ -1,0 +1,43 @@
+name;domain;locality_state;url_category;url_category_position;url_subcategory;html_category;tags;gdpr_block;articles_limit;type
+The Wall Street Journal;https://www.wsj.com;New York;False;;False;True;False;False;True;newspaper
+The New York Times;https://www.nytimes.com;New York;True;6;False;False;False;False;False;newspaper
+USA Today;https://www.usatoday.com;Virginia;True;4;False;False;False;False;False;newspaper
+Los Angeles Times;http://www.latimes.com;California;True;3;False;True;False;True;False;newspaper
+The Mercury News;https://www.mercurynews.com;California;False;;False;True;True;False;False;newspaper
+New York Daily News;http://www.nydailynews.com;New York;True;3;False;True;False;True;False;newspaper
+New York Post;https://nypost.com;New York;False;;False;False;True;False;False;newspaper
+The Washington Post;https://www.washingtonpost.com;Washington D.C.;True;3;True;False;False;False;True;newspaper
+Chicago Sun-Times;https://chicago.suntimes.com;Illinois;True;3;False;False;False;False;False;newspaper
+The Denver Post;https://www.denverpost.com;Colorado;False;;False;True;True;False;False;newspaper
+Chicago Tribune;http://www.chicagotribune.com;Illinois;True;;False;True;True;True;True;newspaper
+The Dallas Morning News;https://www.dallasnews.com;Texas;True;4;True;False;True;True;True;newspaper
+Newsday;https://www.newsday.com;New York;True;3;False;True;False;True;False;newspaper
+Huston Chronicles;https://www.chron.com;Texas;True;3;False;False;False;False;False;newspaper
+Orange County Register;https://www.ocregister.com;California;False;;False;True;True;False;False;newspaper
+The Star-Ledger;http://www.nj.com;New Jersey;False;;False;False;False;False;False;newspaper
+Tampa Bay Times;http://www.tampabay.com;Florida;False;;False;True;False;False;False;newspaper
+The Plain Dealer;https://www.cleveland.com;Ohio;False;;False;False;False;False;False;newspaper
+The Philadelphia Inquier;http://www.philly.com;Pennsylvania;True;4;False;True;False;False;False;newspaper
+Star Tribune;http://www.startribune.com;Minnesota;False;;False;True;False;False;False;newspaper
+The Arizona Republic;https://www.azcentral.com;Arizona;True;4;True;False;False;False;False;newspaper
+Honolulu Star-Advertiser;http://www.staradvertiser.com;Hawaii;True;6;False;True;False;False;False;newspaper
+Las Vegas Review-Journal;https://www.reviewjournal.com;Nevada;True;3;True;True;False;False;False;newspaper
+The San Diego Union-Tribune;http://www.sandiegouniontribune.com;California;True;3;False;True;False;True;False;newspaper
+The Boston Globe;http://www.bostonglobe.com;Massachusetts;False;;False;True;False;False;True;newspaper
+CNN;https://edition.cnn.com/;;True;6;False;False;False;False;False;news agency
+Fox News;http://www.foxnews.com;;True;3;False;False;False;False;False;news agency
+MSNBC;http://www.msnbc.com;;False;;False;False;True;False;False;news agency
+NBC News;https://www.nbcnews.com;;True;3;True;False;False;False;False;news agency
+ABC News;https://abcnews.go.com;;True;3;False;False;False;False;False;news agency
+CBS News;http://www.cbsnews.com;;False;;False;False;False;False;False;news agency
+The Blaze;https://www.theblaze.com;;False;;False;False;False;False;False;news agency
+Al Jazeera;https://www.aljazeera.com;;False;;False;True;True;False;False;news agency
+Bloomberg News;https://www.bloomberg.com;;False;;False;True;False;False;False;news agency
+Voice of America;https://www.voanews.com;;False;;False;False;False;False;False;news agency
+United Press International;https://www.upi.com;;False;;False;True;False;False;False;news agency
+Politico;https://www.politico.com;;False;;False;False;True;False;False;news agency
+NPR News;https://www.npr.org;;False;;False;True;True;False;False;news agency
+Breitbart News Network;http://www.breitbart.com;;False;;False;False;True;False;False;news agency
+The Onion;https://www.theonion.com;;False;;False;False;True;False;False;news agency
+Newsmax;https://www.newsmax.com;;True;3;False;True;False;False;False;news agency
+Newsweek;http://www.newsweek.com/us;;False;;False;True;True;False;False;news agency

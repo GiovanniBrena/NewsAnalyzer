@@ -7,7 +7,7 @@ import modules.news_scraper as news_scraper
 mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo_client["NewsAnalyzer"]
 
-fileSources = open('../sources.json').read()
+fileSources = open('../data/sources.json').read()
 sources = json.loads(fileSources)
 
 category_list = db['categories'].distinct('category')
@@ -38,7 +38,7 @@ for s in sources:
                 for c in category_list:
                     if db_category and db_category['category'] == c:
                         news_data = news_scraper.scrape_news(url)
-                        if news_data:
+                        if news_data and len(news_data['keywords']) > 9:
                             news_data['category'] = c
                             news_data['_id'] = url_hex
                             db['articles'].insert_one(news_data)
