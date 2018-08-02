@@ -4,6 +4,16 @@ import pymongo
 import modules.news_scraper as news_scraper
 
 
+def print_articles_stats():
+    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    dbc = client["NewsAnalyzer"]
+
+    cat = dbc.categories.distinct('category')
+    print('Total articles: ' + str(dbc.articles.count()))
+    for cc in cat:
+        print(cc + ': ' + str(dbc.articles.find({'category': cc}).count()))
+
+
 mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo_client["NewsAnalyzer"]
 
@@ -11,6 +21,8 @@ fileSources = open('../data/sources.json').read()
 sources = json.loads(fileSources)
 
 category_list = db['categories'].distinct('category')
+
+total_count = 0
 
 for s in sources:
     insert_count = 0
@@ -45,15 +57,9 @@ for s in sources:
                             insert_count = insert_count + 1
                             print('Inserted article in ' + c)
 
-        print('---------- Total new articles categorized by ' + s['name'] + ' :' + str(insert_count))
+        total_count = total_count + insert_count
+        print('---------- New articles categorized by ' + s['name'] + ' :' + str(insert_count))
 
-
-def print_articles_stats():
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
-    dbc = client["NewsAnalyzer"]
-
-    cat = dbc.categories.distinct('category')
-    print('Total articles: ' + str(dbc.articles.count()))
-    for cc in cat:
-        print(cc + ': ' + str(dbc.articles.find({'category': cc}).count()))
+print('----------------------- Total new articles: ' + str(total_count))
+print_articles_stats()
 
