@@ -2,7 +2,7 @@ import newspaper
 import json
 import pymongo
 import pickle
-import modules.news_scraper as news_scraper
+import modules.article_scraper as news_scraper
 import modules.category_classifier as classifier
 
 

@@ -1,7 +1,7 @@
 import newspaper
 import json
 import pymongo
-import modules.news_scraper as news_scraper
+import modules.article_scraper as news_scraper
 
 
 def print_articles_stats():

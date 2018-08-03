@@ -2,7 +2,7 @@ import json
 import sys
 import getopt
 import datetime
-import modules.news_scraper as news_scraper
+import modules.article_scraper as news_scraper
 
 '''
 This script enrich tweets by adding a category from url (if present) and a set of keywords.

@@ -10,8 +10,7 @@ def user_to_mongo(username, twitter, db):
 
     try:
         data = twitter.get_user(username)
-        user = None
-
+        user = {}
         user['_id'] = data.id
         user['name'] = data.name
         user['screen_name'] = data.screen_name

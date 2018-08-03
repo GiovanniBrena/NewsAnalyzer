@@ -3,7 +3,7 @@ import json
 import pymongo
 import pickle
 import sys
-import modules.news_scraper as news_scraper
+import modules.article_scraper as news_scraper
 import modules.category_classifier as classifier
 import modules.enrich_news_tweet as enricher
 
@@ -21,7 +21,7 @@ mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo_client["NewsAnalyzer"]
 
 # load the model from disk
-models = None
+models = {}
 models['model'] = pickle.load(open('../models/classifier.sav', 'rb'))
 models['countvect'] = pickle.load(open('../models/countvect.sav', 'rb'))
 models['tfidfvect'] = pickle.load(open('../models/tfidfvect.sav', 'rb'))
