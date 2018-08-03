@@ -16,7 +16,7 @@ def scrape_news(news_url, language='en', nlp=True):
         if nlp:
             news.nlp()
 
-        news_data = {}
+        news_data = None
         news_data['title'] = news.title
         news_data['authors'] = news.authors
         news_data['text'] = news.text

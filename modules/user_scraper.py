@@ -1,13 +1,4 @@
-import tweepy
-import json
-import sys
-import threading
-import csv
-import sys
-import getopt
-import datetime
 from tweepy import TweepError
-from pymongo import MongoClient
 
 
 def user_to_mongo(username, twitter, db):
@@ -19,7 +10,7 @@ def user_to_mongo(username, twitter, db):
 
     try:
         data = twitter.get_user(username)
-        user = {}
+        user = None
 
         user['_id'] = data.id
         user['name'] = data.name

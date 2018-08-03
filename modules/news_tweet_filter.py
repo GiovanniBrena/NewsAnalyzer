@@ -2,9 +2,7 @@ from urllib.parse import urlparse
 from http import client
 import re
 import requests
-
-
-urlex_endpoint = "http://1vxhpyp8tevqb7ld.pro.urlex.org/json/"
+import json
 
 
 def unshorten_url(url, count=0):
@@ -38,7 +36,9 @@ def extract_raw_link(text):
 
 def expand(query):
     result = []
-    r = requests.get(urlex_endpoint+query)
+    fileKeys = open('credentialsTwitter.json').read()
+    keys = json.loads(fileKeys)
+    r = requests.get(keys['urlex_endpoint']+query)
     if r:
         response = r.json()
         for i in response:

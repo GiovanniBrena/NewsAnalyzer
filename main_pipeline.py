@@ -11,7 +11,7 @@ sys.path.append("/data")
 
 # Parameters
 news_url = 'https://www.nytimes.com/2018/07/29/us/carr-fire-victim-california.html'
-MAX_USERS = 1
+MAX_USERS = 100
 MAX_TWEETS = 100
 
 

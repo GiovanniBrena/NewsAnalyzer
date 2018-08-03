@@ -1,9 +1,6 @@
-
 import json
-import re
 import sys
 import getopt
-import requests
 import datetime
 import modules.news_scraper as news_scraper
 
@@ -16,6 +13,7 @@ To run enrich_news_tweet.py you have to give these options:
 -o : output file name
 '''
 
+
 def enrich_news_tweets(input_file, sources_file):
     fileTweets = open(input_file).read()
     tweets = json.loads(fileTweets)
@@ -24,8 +22,8 @@ def enrich_news_tweets(input_file, sources_file):
         tw_count = 0
         print('Processing ' + user)
         for tw in tweets[user]:
-            tw = process_tweet(tw, sources_file)
-            tw_count=tw_count+1
+            process_tweet(tw, sources_file)
+            tw_count = tw_count+1
             print(str(tw_count) + ' / ' + str(len(tweets[user])))
     return tweets
 
@@ -37,130 +35,38 @@ def save_tweets(data, name_file):
     return
 
 
-def process_tweet(tweet, sources):
+def process_tweet(tweet, db):
     url = tweet['urls'][0]
     source_name = tweet['news_sources'][0]
-    category = None
 
     news_data = news_scraper.scrape_news(url)
+    category = extract_category_from_url(url, source_name, db)
+    # if category == None: predict
 
+    news_data['category'] = category
+    tweet['article'] = news_data
+
+
+def extract_category_from_url(url, source_name, db):
+    category = None
+    sources = db.sources.find()
     for s in sources:
         if source_name == s['name'] and s['url_category'] == 'True':
             splitted_url = url.split('/')
             if len(splitted_url) > int(s['url_category_position']):
                 category = splitted_url[int(s['url_category_position'])]
-            if (category == 'news' or category == 'us') and len(splitted_url) > int(s['url_category_position'])+1:
-                category = url.split('/')[int(s['url_category_position'])+1]
+            if (category == 'news' or category == 'us') and len(splitted_url) > int(s['url_category_position']) + 1:
+                category = url.split('/')[int(s['url_category_position']) + 1]
+            return get_consolidated_category(category, db)
+    return None
 
-    '''
-    if source == 'The Wall Street Journal':
-        category = None
 
-    elif source == 'The New York Times':
-        category = url.split('/')[6]
-
-    elif source == 'USA Today':
-        category = url.split('/')[4]
-        if category == 'news':
-            category = url.split('/')[5]
-
-    elif source == 'Los Angeles Times':
-        category = url.split('/')[3]
-
-    elif source == 'The Mercury News':
-        category = None
-
-    elif source == 'New York Daily News':
-        category = url.split('/')[4]
-
-    elif source == 'New York Post':
-        category = None
-
-    elif source == 'The Washington Post':
-        category = url.split('/')[3]
-
-    elif source == 'Chicago Sun-Times':
-        category = url.split('/')[3]
-
-    elif source == 'The Denver Post':
-        category = None
-
-    elif source == 'Chicago Tribune':
-        category = None
-
-    elif source == 'The Dallas Morning News':
-        category = url.split('/')[4]
-
-    elif source == 'Newsday':
-        category = url.split('/')[3]
-
-    elif source == 'Huston Chronicles':
-        category = url.split('/')[3]
-
-    elif source == 'Orange County Register':
-        category = None
-    elif source == 'The Star-Ledger':
-        category = None
-    elif source == 'Tampa Bay Times':
-        category = None
-    elif source == 'The Plain Dealer':
-        category = None
-    elif source == 'The Philadelphia Inquier':
-        category = None
-    elif source == 'Star Tribune':
-        category = None
-    elif source == 'The Arizona Republic':
-        category = url.split('/')[4]
-        if category == 'news':
-            category = url.split('/')[5]
-            
-    elif source == 'Honolulu Star-Advertiser':
-        category = None
-    elif source == 'Las Vegas Review-Journal':
-        category = None
-    elif source == 'The San Diego Union-Tribune':
-        category = None
-    elif source == 'The Boston Globe':
-        category = None
-    elif source == 'CNN':
-        category = None
-    elif source == 'Fox News':
-        category = None
-    elif source == 'MSNBC':
-        category = None
-    elif source == 'NBC News':
-        category = None
-    elif source == 'ABC News':
-        category = None
-    elif source == 'CBS News':
-        category = None
-    elif source == 'The Blaze':
-        category = None
-    elif source == 'Al Jazeera':
-        category = None
-    elif source == 'Bloomberg News':
-        category = None
-    elif source == 'Voice of America':
-        category = None
-    elif source == 'United Press International':
-        category = None
-    elif source == 'Politico':
-        category = None
-    elif source == 'NPR News':
-        category = None
-    elif source == 'Breitbart News Network':
-        category = None
-    elif source == 'The Onion':
-        category = None
-    elif source == 'Newsmax':
-        category = None
-    elif source == 'Newsweek':
-        category = None
-
-    '''
-    news_data['category'] = category
-    tweet['article'] = news_data
-
+def get_consolidated_category(raw_category, db):
+    category_row = db.categories.find_one({'_id': raw_category})
+    if category_row:
+        return category_row['category']
+    else:
+        return None
 
 
 def main():
