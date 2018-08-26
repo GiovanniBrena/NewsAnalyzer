@@ -7,7 +7,7 @@ from newspaper import Article
 
 def scrape_news(news_url, language='en', nlp=True):
     try:
-        news = Article(news_url, language=language, MAX_KEYWORDS=30, MAX_AUTHORS=1)
+        news = Article(news_url, language=language, MAX_KEYWORDS=30, MAX_AUTHORS=1, fetch_images=False)
         # download the document
         news.download()
         # parse text content
@@ -17,6 +17,7 @@ def scrape_news(news_url, language='en', nlp=True):
             news.nlp()
 
         news_data = {}
+        news_data['_id'] = news.url.encode('utf-8').hex()[-64:]
         news_data['title'] = news.title
         news_data['authors'] = news.authors
         news_data['text'] = news.text
@@ -27,49 +28,9 @@ def scrape_news(news_url, language='en', nlp=True):
         news_data['source'] = news.source_url
         news_data['publish_date'] = str(news.publish_date)
         news_data['scrape_date'] = str(datetime.datetime.now())
+        news_data['pipelined'] = False
 
         return news_data
     except:
         return None
 
-
-def save_result(news, file_name):
-    with open(file_name+'.json', 'w') as outfile:
-        json.dump(news, outfile)
-
-
-def main():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'x:f:l:nonlp')
-    except getopt.GetoptError as err:
-        # print help information and exit:
-        print('err')
-        sys.exit(2)
-
-    news_url = None
-    name_file = "results"
-    language = 'en'
-    nlp = True
-
-    for o, a in opts:
-        if o == "-x":
-            news_url = a
-        elif o == "-f":
-            name_file = a
-        elif o == "-l":
-            language = a
-        elif o == "-l":
-            language = a
-        elif o =="-nonlp":
-            nlp = False
-
-    if not news_url:
-        print("You must provide a url to scrape.")
-        return
-
-    news = scrape_news(news_url, language, nlp)
-    save_result(news, name_file)
-
-
-if __name__ == "__main__":
-    main()

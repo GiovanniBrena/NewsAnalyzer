@@ -13,7 +13,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 
 # PARAMETERS
 # minimum probability to accept prediction
-classifier_threshold = 0.5
+classifier_threshold = 0.4
 
 
 def save_model(classifier, countvect, tfidfvect, labelencoder):
@@ -62,17 +62,42 @@ def predict(keywords, models=None):
     return None
 
 
+'''
+Aggregated categories:
+politics
+sports
+business
+world
+entertainment/art
+national/local
+style/food/travel
+science/technology/health
+'''
+
+
+def get_aggregated_category(category):
+    if category in ['national', 'local']:
+        return 'national/local'
+    elif category in ['entertainment', 'art']:
+        return 'entertainment/art'
+    elif category in ['science', 'technology', 'health']:
+        return 'science/technology/health'
+    elif category in ['style', 'food', 'travel']:
+        return 'style/food/travel'
+    else:
+        return category
+
+
 def create_model():
-    classes = ['world', 'politics', 'business', 'sports',
-               'entertainment', 'health', 'local', 'technology',
-               'style', 'travel']
+    classes = ['world', 'politics', 'business', 'sports', 'entertainment/art',
+               'national/local', 'style/food/travel', 'science/technology/health']
 
     mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
     db = mongo_client["NewsAnalyzer"]
 
     # load the dataset
-    articles = db.articles.find()
-    print('Training SVM on ' + str(articles.count()) + ' examples ' + ' for ' + str(len(classes)) + ' classes...')
+    articles = db.articles.find({'ground_truth': True})
+    print('Training SVM on ' + str(articles.count()) + ' examples for ' + str(len(classes)) + ' classes...')
 
     # X -> features, y -> label
     X = []
@@ -80,12 +105,12 @@ def create_model():
 
     # create features as concatenation of keywords and tags, labels as category
     for a in articles:
-        if a['category'] in classes:
+        if a['category_aggregate'] in classes:
             kw_concat = ' '.join(a['keywords'])
             if len(a['tags']) > 2:
                 kw_concat = kw_concat + ' ' + ' '.join(a['tags'])
             X.append(kw_concat)
-            y.append(a['category'])
+            y.append(a['category_aggregate'])
 
     # encode labels into integers
     le = preprocessing.LabelEncoder()

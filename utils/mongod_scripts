@@ -1,8 +1,11 @@
 Export collection
-mongoexport -d NewsAnalyzer -c <collection_name> -o <outputfile> --jsonArray --pretty
+mongoexport -d NewsAnalyzer -c <collection_name> -o <outputfile> --jsonArray
 
 Import collection
 mongoimport --db dbName --collection collectionName --file fileName.json --jsonArray
 
 Find all entries with missing field
 db.inventory.find( { field : { $exists: false } } )
+
+Filter and random sample
+list(db.articles.aggregate([{"$match": {"category": "sports"}}, {"$sample": {"size": 3}}]))

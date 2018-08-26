@@ -10,9 +10,24 @@ sys.path.append("/modules")
 sys.path.append("/data")
 
 # Parameters
-news_url = 'https://www.nytimes.com/2018/07/29/us/carr-fire-victim-california.html'
+news_url = 'https://edition.cnn.com/interactive/2018/08/world/great-barrier-reef/'
 MAX_USERS = 100
-MAX_TWEETS = 100
+MAX_TWEETS = 200
+
+'''
+Pipeline steps:
+1) Extract twitter usernames from news url
+2) Exctract user accounts and update users collection
+3) Extract tweets + articles
+    [foreach user]
+    - filter tweets from known news sources
+        [foreach tweet]
+            - run sentiment analysis on text
+            - scrape news article
+            - categorize article
+            - update articles collection
+            - update tweet collection
+'''
 
 
 def main():
@@ -52,7 +67,7 @@ def main():
         count = get_tweets.user_tweets_to_mongo(u, twitter, db, sources, MAX_TWEETS)
         tw_total = tw_total + count['total']
         tw_useful = tw_useful + count['useful']
-        print(u + ' useful tweets: ' + str(count['useful']) + ' / ' + str(count['total']))
+        print('| ' + u + ' useful tweets: ' + str(count['useful']) + ' / ' + str(count['total']))
 
     if tw_useful > 0:
         print('Total useful tweets: ' + str(tw_useful) + ' / ' + str(tw_total) + ' (' + str(round((tw_useful/tw_total)*100, 2)) + '%)')

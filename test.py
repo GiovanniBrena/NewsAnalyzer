@@ -1,36 +1,48 @@
-import newspaper
-import json
+import modules.enrich_news_tweet as enricher
 import pymongo
-import pickle
-import modules.article_scraper as news_scraper
-import modules.category_classifier as classifier
+import threading
+from threading import Thread
+import time
+from random import randint
 
 
 mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo_client["NewsAnalyzer"]
 
-fileSources = open('data/sources.json').read()
-sources = json.loads(fileSources)
+# Definizione del lock
+threadLock = threading.Lock()
 
-category_list = db['categories'].distinct('category')
 
-# load the model from disk
-models = {}
-models['model'] = pickle.load(open('models/classifier.sav', 'rb'))
-models['countvect'] = pickle.load(open('models/countvect.sav', 'rb'))
-models['tfidfvect'] = pickle.load(open('models/tfidfvect.sav', 'rb'))
-models['labelencoder'] = pickle.load(open('models/labelencoder.sav', 'rb'))
+class IlMioThread(Thread):
+    def __init__(self, nome, durata):
+        Thread.__init__(self)
+        self.nome = nome
+        self.durata = durata
 
-domain = 'https://www.nypost.com'
+    def run(self):
+        print("Thread '" + self.name + "' avviato")
+        # Acquisizione del lock
+        threadLock.acquire()
+        time.sleep(self.durata)
+        print("Thread '" + self.name + "' terminato")
+        # Rilascio del lock
+        threadLock.release()
 
-news_source = newspaper.build(domain, memoize_articles=False)
-print('Found articles: ' + str(news_source.size()))
-for article in news_source.articles:
-    try:
-        url = article.url
-        news_data = news_scraper.scrape_news(url)
-        print(url)
-        print(classifier.predict(news_data['keywords'], 10, models))
-    except:
-        pass
 
+# Creazione dei thread
+thread1 = IlMioThread("Thread#1", randint(1, 100))
+thread2 = IlMioThread("Thread#2", randint(1, 100))
+thread3 = IlMioThread("Thread#3", randint(1, 100))
+
+# Avvio dei thread
+thread1.start()
+thread2.start()
+thread3.start()
+
+# Join
+thread1.join()
+thread2.join()
+thread3.join()
+
+# Fine dello script
+print("Fine")

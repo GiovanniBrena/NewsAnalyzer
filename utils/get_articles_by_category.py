@@ -2,6 +2,7 @@ import newspaper
 import json
 import pymongo
 import modules.article_scraper as news_scraper
+import modules.category_classifier as category_classifier
 
 
 def print_articles_stats():
@@ -52,10 +53,13 @@ for s in sources:
                         news_data = news_scraper.scrape_news(url)
                         if news_data and len(news_data['keywords']) > 9:
                             news_data['category'] = c
-                            news_data['_id'] = url_hex
-                            db['articles'].insert_one(news_data)
-                            insert_count = insert_count + 1
-                            print('Inserted article in ' + c)
+                            news_data['category_aggregate'] = category_classifier.get_aggregated_category(c)
+                            news_data['ground_truth'] = True
+                            news_data['_id'] = url_hex[-64:]
+                            if not db['articles'].find_one({'_id': news_data['_id']}):
+                                db['articles'].insert_one(news_data)
+                                insert_count = insert_count + 1
+                                print('Inserted article in ' + c)
 
         total_count = total_count + insert_count
         print('---------- New articles categorized by ' + s['name'] + ' :' + str(insert_count))

@@ -33,11 +33,7 @@ def user_tweets_to_mongo(account, twitter, mongo, sources, N=3000):
                              'retweet_count': tweets.retweet_count,
                              'create_at': tweets.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                              'mentions': tweets.entities['user_mentions'], '_id': tweets.id_str,
-                             'coordinates': tweets.coordinates, 'entities': tweets.entities, 'RT': False}
-                        if hasattr(tweets, 'retweeted_status'):
-                            d['RT'] = True
-                            d['RT_id'] = tweets.retweeted_status.id_str
-                            d['RT_entities'] = tweets.retweeted_status.entities
+                             'coordinates': tweets.coordinates}
                         user_tweets.append(d)
                 if i != iteration:
                     user_tweets = user_tweets[:len(user_tweets) - 1]
@@ -50,17 +46,20 @@ def user_tweets_to_mongo(account, twitter, mongo, sources, N=3000):
     n_total = len(user_tweets)
 
     tweets_with_link = []
-
+    expander_query = ''
     for i in range(0, len(user_tweets)):
         if not mongo['tweet'].find_one({'_id': user_tweets[i]['_id']}):
-            link = None
-            if len(user_tweets[i]['entities']['urls']) > 0:
-                link = user_tweets[i]['entities']['urls'][0]['expanded_url']
-            elif 'RT_entities' in user_tweets[i] and len(user_tweets[i]['RT_entities']['urls']) > 0:
-                link = user_tweets[i]['RT_entities']['urls'][0]['expanded_url']
-            user_tweets[i]['news_url'] = link
-            if link:
+            link = url_filter.extract_raw_link(user_tweets[i]['text'])
+            if link and link != '':
+                user_tweets[i]['link_raw'] = link
                 tweets_with_link.append(user_tweets[i])
+                expander_query = expander_query + link + '***'
+
+    print(account + ' : [URLS] expanding links, count ' + str(len(expander_query.split('***'))))
+    expanded_links = url_filter.expand(expander_query)
+    for i in range(0, len(tweets_with_link)):
+        if len(expanded_links) > i:
+            tweets_with_link[i]['news_url'] = expanded_links[i]
 
     filtered_tweets = []
     for t in tweets_with_link:
@@ -72,6 +71,7 @@ def user_tweets_to_mongo(account, twitter, mongo, sources, N=3000):
     n_useful = len(user_tweets)
 
     # download articles and store tweet + article
+    print(account + ' : [ARTICLES] start processing, count ' + str(n_useful))
     for t in user_tweets:
         t = enricher.process_tweet(t, mongo)
         if t and not mongo['tweet'].find_one({'_id': t['_id']}):

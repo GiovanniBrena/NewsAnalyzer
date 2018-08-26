@@ -14,7 +14,7 @@ This script allows tests on a previously trained news category classifier:
 otherwise it just prints the url and the prediction
 '''
 
-domain = 'foxnews.com'
+domain = 'nytimes.com'
 
 
 mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -51,7 +51,7 @@ for article in news_source.articles:
         print(url)
         prediction = classifier.predict(kw, models)
         print(prediction)
-        extracted_category = enricher.extract_category_from_url(url, source_name, db)
+        extracted_category = classifier.get_aggregated_category(enricher.extract_category_from_url(url, source_name, db))
         if extracted_category and prediction:
             total_counter = total_counter + 1
             if extracted_category == prediction['class']:
