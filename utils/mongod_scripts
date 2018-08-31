@@ -1,5 +1,7 @@
 Export collection
-mongoexport -d NewsAnalyzer -c <collection_name> -o <outputfile> --jsonArray
+mongoexport -d NewsAnalyzer -c <collection_name> -o <outputfile> --jsonArray --pretty
+
+mongoexport -d NewsAnalyzer -c user -o users-30_08 --jsonArray && mongoexport -d NewsAnalyzer -c tweet -o tweets-30_08 --jsonArray && mongoexport -d NewsAnalyzer -c articles -o articles-30_08 --jsonArray
 
 Import collection
 mongoimport --db dbName --collection collectionName --file fileName.json --jsonArray

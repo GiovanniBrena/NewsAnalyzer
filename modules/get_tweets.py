@@ -1,8 +1,32 @@
 import tweepy
 import time
 from langdetect import detect
+import threading
+from threading import Thread
 import modules.news_tweet_filter as url_filter
 import modules.enrich_news_tweet as enricher
+import modules.article_scraper as news_scraper
+
+# Definizione del lock
+threadLock = threading.Lock()
+
+
+class ArticleThread(Thread):
+    def __init__(self, nome, tweet, articles):
+        Thread.__init__(self)
+        self.nome = nome
+        self.tweet = tweet
+        self.articles = articles
+
+    def run(self):
+        url = self.tweet['news_url']
+        news_data = news_scraper.scrape_news(url)
+
+        # Acquisizione del lock
+        threadLock.acquire()
+        self.articles[self.tweet['_id']] = news_data
+        # Rilascio del lock
+        threadLock.release()
 
 
 def user_tweets_to_mongo(account, twitter, mongo, sources, N=3000):
@@ -46,6 +70,9 @@ def user_tweets_to_mongo(account, twitter, mongo, sources, N=3000):
     except tweepy.RateLimitError:
         print('TWITTER LIMIT REACHED: sleep for 15 mins')
         time.sleep(15 * 60)
+    except tweepy.TweepError:
+        print('TWEEPY GENERIC ERROR: pass')
+        pass
 
     n_total = len(user_tweets)
 
@@ -72,8 +99,20 @@ def user_tweets_to_mongo(account, twitter, mongo, sources, N=3000):
     n_useful = len(user_tweets)
 
     # download articles and store tweet + article
+    thread_pool = []
+    articles = {}
+    index = 0
     for t in user_tweets:
-        t = enricher.process_tweet(t, mongo)
+        thread_pool.append(ArticleThread(index, t, articles))
+
+    for th in thread_pool:
+        th.start()
+    for th in thread_pool:
+        th.join()
+
+    # download articles and store tweet + article
+    for t in user_tweets:
+        t = enricher.process_tweet(t, articles[t['_id']], mongo)
         if t and not mongo['tweet'].find_one({'_id': t['_id']}):
             mongo['tweet'].insert_one(t)
     return {'total': n_total, 'useful': n_useful}

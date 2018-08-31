@@ -42,10 +42,10 @@ def save_tweets(data, name_file):
     return
 
 
-def process_tweet(tweet, db):
+def process_tweet(tweet, news_data, db):
     url = tweet['news_url']
     source_name = tweet['news_source']
-    news_data = news_scraper.scrape_news(url)
+    # news_data = news_scraper.scrape_news(url)
     if not news_data:
         return None
     ground_truth = True
