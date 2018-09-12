@@ -10,7 +10,7 @@ sys.path.append("/modules")
 sys.path.append("/data")
 
 # Parameters
-ART_PER_CATEGORY = 10
+ART_PER_CATEGORY = 5
 
 MAX_USERS = 100
 MAX_TWEETS = 200
@@ -46,8 +46,8 @@ def main():
 
     # sample random articles from each category from DB
     articles = []
-    # categories = ['world', 'politics', 'business', 'sports', 'entertainment/art', 'national/local', 'style/food/travel', 'science/technology/health']
-    categories = ['style/food/travel', 'entertainment/art']
+    categories = ['world', 'politics', 'business', 'sports', 'entertainment/art', 'national/local', 'style/food/travel', 'science/technology/health']
+    # categories = ['business', 'national/local', 'style/food/travel', 'sports']
 
     for c in categories:
         sample = list(db.articles.aggregate([{"$match": {"category_aggregate": c, "pipelined": False, "ground_truth": True}},

@@ -99,6 +99,7 @@ def user_tweets_to_mongo(account, twitter, mongo, sources, N=3000):
     n_useful = len(user_tweets)
 
     # download articles and store tweet + article
+    # TODO limit the size of the thread pool and iterate on pools
     thread_pool = []
     articles = {}
     index = 0

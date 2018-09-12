@@ -1,6 +1,9 @@
 # importing necessary libraries
 import pymongo
 from math import exp
+from nltk.stem import WordNetLemmatizer
+from nltk import pos_tag
+from nltk.tokenize import word_tokenize
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
@@ -14,6 +17,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 # PARAMETERS
 # minimum probability to accept prediction
 classifier_threshold = 0.4
+lemmatizer = WordNetLemmatizer()
 
 
 def save_model(classifier, countvect, tfidfvect, labelencoder):
@@ -50,7 +54,8 @@ def predict(keywords, models=None):
             print('Bad model provided')
             return None
 
-    X = [' '.join(keywords)]
+    kw_concat = transform_keywords(' '.join(keywords))
+    X = kw_concat
     x_count = countvect.transform(X)
     feature_vect = tfidfvect.transform(x_count)
     prediction = model.predict_log_proba(feature_vect)
@@ -88,7 +93,34 @@ def get_aggregated_category(category):
         return category
 
 
+def transform_keywords(text):
+    pos_dict = {'NOUN': 'n', 'FW': 'n', 'NN': 'n', 'NNP': 'n', 'NNPS': 'n', 'NNS': 'n',
+                'ADJ': 'a', 'JJ': 'a', 'JJR': 'a', 'JJS': 'a',
+                # 'ADV': 'r', 'RBR': 'r', 'RBS': 'r',
+                'VERB': 'v', 'VB': 'v', 'VBD': 'v', 'VBG': 'v',
+                'VBN': 'v', 'VBP': 'v', 'VBZ': 'v'}
+
+    tokens = word_tokenize(text)  # Generate list of tokens
+    tokens_pos = pos_tag(tokens)
+
+    stemmed_kw = []
+
+    for kw in tokens_pos:
+        word = kw[0]
+        pos = kw[1]
+        if pos not in pos_dict:
+            continue
+        pos = pos_dict[pos]
+        stemmed_kw.append(lemmatizer.lemmatize(word, pos))
+
+    return ' '.join(stemmed_kw)
+
+
 def create_model():
+    ARTICLES_PER_CATEG0RY = 5000
+
+    # #############################################################################
+    # Load categories from the training set
     classes = ['world', 'politics', 'business', 'sports', 'entertainment/art',
                'national/local', 'style/food/travel', 'science/technology/health']
 
@@ -96,8 +128,13 @@ def create_model():
     db = mongo_client["NewsAnalyzer"]
 
     # load the dataset
-    articles = db.articles.find({'ground_truth': True})
-    print('Training SVM on ' + str(articles.count()) + ' examples for ' + str(len(classes)) + ' classes...')
+    articles = []
+    for cat in classes:
+        for aa in list(db.articles.aggregate([{"$match": {"category_aggregate": cat, "ground_truth": True}},
+                                              {"$sample": {"size": ARTICLES_PER_CATEG0RY}}])):
+            articles.append(aa)
+
+    print('Training SVM on ' + str(len(articles)) + ' examples for ' + str(len(classes)) + ' classes...')
 
     # X -> features, y -> label
     X = []
@@ -106,9 +143,13 @@ def create_model():
     # create features as concatenation of keywords and tags, labels as category
     for a in articles:
         if a['category_aggregate'] in classes:
+
             kw_concat = ' '.join(a['keywords'])
             if len(a['tags']) > 2:
                 kw_concat = kw_concat + ' ' + ' '.join(a['tags'])
+
+            kw_concat = transform_keywords(kw_concat)
+
             X.append(kw_concat)
             y.append(a['category_aggregate'])
 
@@ -117,23 +158,25 @@ def create_model():
     le.fit(classes)
     y_encoded = le.transform(y)
 
+    # dividing X, y into train and test data
+    X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.25)
+
     # vectorize features
     count_vect = CountVectorizer()
-    X_train_counts = count_vect.fit_transform(X)
+    X_train_counts = count_vect.fit_transform(X_train)
     tfidf_transformer = TfidfTransformer()
     X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 
-    # dividing X, y into train and test data
-    X_train, X_test, y_train, y_test = train_test_split(X_train_tfidf, y_encoded, random_state=0)
+    print('Feature vector size: ' + str(len(count_vect.vocabulary_)))
 
     # training a linear SVM classifier
     from sklearn.svm import SVC
     svm_model_linear = SVC(kernel='linear', C=1, probability=True)
-    svm_model_linear.fit(X_train, y_train)
-    svm_predictions = svm_model_linear.predict(X_test)
+    svm_model_linear.fit(X_train_tfidf, y_train)
+    svm_predictions = svm_model_linear.predict(tfidf_transformer.transform(count_vect.transform(X_test)))
 
     # model accuracy for X_test
-    accuracy = svm_model_linear.score(X_test, y_test)
+    accuracy = svm_model_linear.score(tfidf_transformer.transform(count_vect.transform(X_test)), y_test)
 
     # creating a confusion matrix
     cm = confusion_matrix(y_test, svm_predictions)

@@ -1,5 +1,5 @@
 from tweepy import TweepError
-
+import pymongo as pym
 
 def user_to_mongo(username, twitter, db):
 
@@ -27,8 +27,12 @@ def user_to_mongo(username, twitter, db):
         user['created_at'] = data.created_at
 
         # insert user into mongo
-        db['user'].insert_one(user)
-        print('Inserted user: ', username)
+        try:
+            db['user'].insert_one(user)
+            print('Inserted user: ', username)
+        except pym.errors.DuplicateKeyError:
+            print('Duplicate user, skip')
+            pass
 
     except TweepError as e:
         if e.api_code == 50:

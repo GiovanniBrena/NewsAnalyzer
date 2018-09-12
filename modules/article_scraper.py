@@ -30,7 +30,37 @@ def scrape_news(news_url, language='en', nlp=True):
         news_data['scrape_date'] = str(datetime.datetime.now())
         news_data['pipelined'] = False
 
-        return news_data
+        if validate_text(news_data['text']):
+            return news_data
+        else:
+            return None
     except:
         return None
 
+
+black_list = [
+        'Please enable cookies on your web browser',
+        'Terms of Service Violation',
+        'Unfortunately, our website is currently unavailable',
+        'By choosing “I agree” below, you agree that NPR',
+        'About Your Privacy on this Site',
+        'Chat with us in Facebook Messenger',
+        'What term do you want to search? Search with google',
+        'This site is not available in your region',
+        'We can’t find a newsday subscription associated',
+        'Desktop notifications are on',
+        'Already a subscriber?',
+        'This demonstration page uses our WeatherBlox',
+        'NYTimes.com no longer supports Internet Explorer',
+        'Tap here to turn on desktop notifications',
+
+    ]
+
+
+def validate_text(text):
+    if text == '':
+        return False
+    for b in black_list:
+        if b in text:
+            return False
+    return True

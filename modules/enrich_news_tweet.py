@@ -13,12 +13,15 @@ To run enrich_news_tweet.py you have to give these options:
 -o : output file name
 '''
 
-# load the model from disk
-models = {}
-models['model'] = pickle.load(open('models/classifier.sav', 'rb'))
-models['countvect'] = pickle.load(open('models/countvect.sav', 'rb'))
-models['tfidfvect'] = pickle.load(open('models/tfidfvect.sav', 'rb'))
-models['labelencoder'] = pickle.load(open('models/labelencoder.sav', 'rb'))
+try:
+    # load the model from disk
+    models = {}
+    models['model'] = pickle.load(open('models/classifier.sav', 'rb'))
+    models['countvect'] = pickle.load(open('models/countvect.sav', 'rb'))
+    models['tfidfvect'] = pickle.load(open('models/tfidfvect.sav', 'rb'))
+    models['labelencoder'] = pickle.load(open('models/labelencoder.sav', 'rb'))
+except:
+    pass
 
 
 def enrich_news_tweets(input_file, sources_file):
@@ -50,12 +53,20 @@ def process_tweet(tweet, news_data, db):
         return None
     ground_truth = True
     category = extract_category_from_url(url, source_name, db)
+    category_prob = 1
     if not category:
         ground_truth = False
-        category = category_classifier.predict(news_data['keywords'], models)
+        pred = category_classifier.predict(news_data['keywords'], models)
+        if pred:
+            category = pred['class']
+            category_prob = pred['probability']
+        else:
+            category = None
+            category_prob = None
 
     news_data['category'] = category
     news_data['category_aggregate'] = category_classifier.get_aggregated_category(category)
+    news_data['category_probability'] = category_prob
     news_data['ground_truth'] = ground_truth
     # insert article
     if news_data and not db['articles'].find_one({'_id': news_data['_id']}):
