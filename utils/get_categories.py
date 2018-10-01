@@ -1,7 +1,7 @@
 import newspaper
 import json
 import pymongo
-import modules.article_scraper as news_scraper
+import twitter_pipeline.article_scraper as news_scraper
 
 mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo_client["NewsAnalyzer"]

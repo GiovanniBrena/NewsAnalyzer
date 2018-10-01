@@ -1,8 +1,10 @@
 import newspaper
 import json
 import pymongo
-import modules.article_scraper as news_scraper
-import modules.category_classifier as category_classifier
+import sys
+sys.path.insert(0, '..')
+import twitter_pipeline.article_scraper as news_scraper
+import twitter_pipeline.category_classifier as category_classifier
 
 
 def print_articles_stats():

@@ -1,5 +1,5 @@
 import pymongo
-import modules.article_scraper as scraper
+import twitter_pipeline.article_scraper as scraper
 
 
 def clear_blacklisted_text(db):
