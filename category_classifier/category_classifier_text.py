@@ -12,10 +12,9 @@ from sklearn.metrics import confusion_matrix
 import pickle
 import datetime
 import warnings
-import logging
 import topic_modeling.preprocess_corpus as preprocessor
+from ast import literal_eval
 warnings.simplefilter("ignore", DeprecationWarning)
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 # PARAMETERS
 # minimum probability to accept prediction
@@ -110,87 +109,67 @@ def transform_keywords(text):
     return ' '.join(stemmed_kw)
 
 
-def create_model():
-    ARTICLES_PER_CATEG0RY = 10000
-    TEST_SIZE = 0.05
-
-    # #############################################################################
-    # Load categories from the training set
-    classes = ['world', 'politics', 'business', 'sports',
-               'entertainment/art',
-               'science/technology/health',
-               'national/local',
-               'style/food/travel'
-               ]
-
-    EXCLUDE_SOURCES = ['The Guardian',
-                       'CBC News',
-                       'Reuters',
-                       'BBC',
-                       'The Globe and Mail',
-                       'New York Daily News',
-                       'Los Angeles Times',
-                       'News Channel 8'
-                       # 'USA Today'
-                       ]
-
-    mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
-    db = mongo_client["NewsAnalyzer"]
-
+def create_model(use_preproc_data=True):
     # load the dataset
-    articles = []
-    for cat in classes:
-        for aa in list(db.articles.aggregate([{"$match":
-                                               {"category_aggregate": cat,
-                                                "ground_truth": True, "source_name": { "$nin": EXCLUDE_SOURCES}
-                                                }},
-                                              {"$sample": {"size": ARTICLES_PER_CATEG0RY}}])):
-            articles.append(aa)
+    data_path = '../topic_modeling/tmp/all_32k/'
+
+    if use_preproc_data:
+        with open(data_path + 'pp_data_train.txt') as f:
+            texts_train = [literal_eval(line) for line in f]
+
+        with open(data_path + 'pp_data_test.txt') as f:
+            texts_test = [literal_eval(line) for line in f]
+
+        y_train = pickle.load(open(data_path+'target_train.sav', 'rb'))
+        y_test = pickle.load(open(data_path + 'target_test.sav', 'rb'))
+
+    else:
+        # Load categories from the training set
+        classes = ['world', 'politics', 'business', 'sports', 'entertainment/art', 'science/technology/health', 'national/local', 'style/food/travel']
+        EXCLUDE_SOURCES = ['The Guardian', 'CBC News', 'Reuters', 'BBC', 'The Globe and Mail', 'New York Daily News', 'Los Angeles Times', 'News Channel 8']
+
+        mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
+        db = mongo_client["NewsAnalyzer"]
+
+        # load the dataset
+        articles = []
+        for cat in classes:
+            for aa in list(db.articles.aggregate([{"$match": {"category_aggregate": cat, "ground_truth": True, "source_name": {"$nin": EXCLUDE_SOURCES} }},
+                                                  {"$sample": {"size": 10000}}])):
+                articles.append(aa)
+
+        bigram_model = pickle.load(open(data_path + 'bigram_model.sav', 'rb'))
+        texts_train = [t['text'] for t in articles]
+        targets = [t['category_aggregate'] for t in articles]
+        texts_train, bigram_model = preprocessor.preprocess(sentences=texts_train, bigram_model=bigram_model)
+        le = preprocessing.LabelEncoder()
+        le.fit(classes)
+        y_encoded = le.transform(targets)
+        texts_train, texts_test, y_train, y_test = train_test_split(texts_train, y_encoded, test_size=0.05,
+                                                                    random_state=10)
 
     print('')
     print('')
-    print('Training examples: ' + str(len(articles)))
-    print('Number of classes: ' + str(len(classes)))
-    print('Test set size: ' + str(TEST_SIZE*100) + '%')
-
+    print('Training examples: ' + str(len(texts_train)))
+    print('Test examples: ' + str(len(y_test)))
     print('')
     print('Pre-processing features...')
 
-    # X -> features, y -> label
-    X = []
-    y = []
-
-    # create features as concatenation of keywords and tags, labels as category
-    for a in articles:
-        if a['category_aggregate'] in classes:
-
-            kw_concat = ' '.join(a['keywords'])
-            if len(a['tags']) > 2:
-                kw_concat = kw_concat + ' ' + ' '.join(a['tags'])
-
-            X.append(kw_concat)
-            y.append(a['category_aggregate'])
-
-    # encode labels into integers
-    le = preprocessing.LabelEncoder()
-    le.fit(classes)
-    y_encoded = le.transform(y)
-
-    # dividing X, y into train and test data
-    X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=TEST_SIZE, random_state=10)
+    X_train = [' '.join(d) for d in texts_train]
+    X_test = [' '.join(d) for d in texts_test]
 
     # count vectorize features
-    count_vect = CountVectorizer(max_df=0.5, min_df=2, max_features=None, binary=False)
-    X_train_countvect = count_vect.fit_transform(X_train)
-    X_test_countvect = count_vect.transform(X_test)
+    count_vect = CountVectorizer(max_df=0.4, min_df=5, max_features=None, binary=True)
+    X_train = count_vect.fit_transform(X_train)
+    X_test = count_vect.transform(X_test)
     print('COUNTVECTOR, Feature vector size: ' + str(len(count_vect.vocabulary_)))
     print('Training models...')
 
     # training Naive Bayes model
     clf_NB = MultinomialNB(class_prior=None, fit_prior=True)
-    clf_NB.fit(X_train_countvect, y_train)
-    train_acc_nb = clf_NB.score(X_train_countvect, y_train)
-    test_acc_nb = clf_NB.score(X_test_countvect, y_test)
+    clf_NB.fit(X_train, y_train)
+    train_acc_nb = clf_NB.score(X_train, y_train)
+    test_acc_nb = clf_NB.score(X_test, y_test)
     print('')
     print('NAIVE BAYES ---------------------------------------------')
     print('Train score: ' + str(train_acc_nb))
@@ -199,19 +178,19 @@ def create_model():
     # training SGD classifiers
     from sklearn.linear_model import SGDClassifier
     clf_SVM = SGDClassifier(n_jobs=-1, max_iter=5000, tol=0.0001, learning_rate='optimal', loss='hinge')
-    clf_SVM.fit(X_train_countvect, y_train)
-    train_acc_svm = clf_SVM.score(X_train_countvect, y_train)
-    test_acc_svm = clf_SVM.score(X_test_countvect, y_test)
+    clf_SVM.fit(X_train, y_train)
+    train_acc_svm = clf_SVM.score(X_train, y_train)
+    test_acc_svm = clf_SVM.score(X_test, y_test)
     print('')
     print('LINEAR SVM ----------------------------------------------')
     print('Train score: ' + str(train_acc_svm))
     print('Test score: ' + str(test_acc_svm))
 
     clf_log_reg = SGDClassifier(n_jobs=-1, max_iter=5000, tol=0.0001, learning_rate='optimal', loss='modified_huber')
-    clf_log_reg.fit(X_train_countvect, y_train)
-    train_acc_log = clf_log_reg.score(X_train_countvect, y_train)
-    test_acc_log = clf_log_reg.score(X_test_countvect, y_test)
-    cm = confusion_matrix(y_test, clf_log_reg.predict(X_test_countvect))
+    clf_log_reg.fit(X_train, y_train)
+    train_acc_log = clf_log_reg.score(X_train, y_train)
+    test_acc_log = clf_log_reg.score(X_test, y_test)
+    cm = confusion_matrix(y_test, clf_log_reg.predict(X_test))
     print('')
     print('LOGISTIC REGRESSION -------------------------------------')
     print('Train score: ' + str(train_acc_log))
@@ -219,11 +198,6 @@ def create_model():
 
     print('')
     print('--------------------------------------')
-    print('CLASS ENCODING')
-    i = 0
-    for c in classes:
-        print(str(i) + ': ' + c)
-        i += 1
     print('')
     print('COUNFUSION MATRIX FOR LOGISTIC REGRESSION:')
     print('')
@@ -231,8 +205,9 @@ def create_model():
     print('')
     print('')
 
+'''
     from sklearn.ensemble import RandomForestClassifier
-    clf_random_for = RandomForestClassifier(n_jobs=-1, criterion='entropy', n_estimators=20, max_depth=250, random_state=0, min_samples_leaf=1, verbose=True)
+    clf_random_for = RandomForestClassifier(n_jobs=-1, n_estimators=20, max_depth=None, random_state=0)
     clf_random_for.fit(X_train_countvect, y_train)
     train_acc_rf = clf_random_for.score(X_train_countvect, y_train)
     test_acc_rf = clf_random_for.score(X_test_countvect, y_test)
@@ -241,13 +216,13 @@ def create_model():
     print('Train score: ' + str(train_acc_rf))
     print('Test score: ' + str(test_acc_rf))
 
-
+'''
     # save model, vectors and label encoding to disk
     # save_model(clf_log_reg, count_vect, le)
 
 
 def main():
-    create_model()
+    create_model(use_preproc_data=False)
 
 
 if __name__ == "__main__":

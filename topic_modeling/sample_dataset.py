@@ -4,10 +4,7 @@ from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 
 
-def create(art_per_category=1000, test_size=0.05):
-    classes = ['world', 'politics', 'business', 'sports',
-               'entertainment/art', 'science/technology/health',
-               'national/local', 'style/food/travel']
+def create(art_per_category=1000, classes=None, test_size=0.05, save_path='tmp/'):
 
     EXCLUDE_SOURCES = ['The Guardian',
                        'CBC News',
@@ -38,10 +35,10 @@ def create(art_per_category=1000, test_size=0.05):
     X_train, X_test, y_train, y_test = train_test_split(articles, target_categories, test_size=test_size)
 
     # pickle.dump(articles, open(file_name, 'wb'))
-    with open('tmp/raw_data_train.txt', 'w') as filehandle:
+    with open(save_path+'raw_data_train.txt', 'w') as filehandle:
         filehandle.writelines("%s\n" % a for a in X_train)
 
-    with open('tmp/raw_data_test.txt', 'w') as filehandle:
+    with open(save_path+'raw_data_test.txt', 'w') as filehandle:
         filehandle.writelines("%s\n" % a for a in X_test)
 
     # encode labels into integers
@@ -49,9 +46,9 @@ def create(art_per_category=1000, test_size=0.05):
     le.fit(classes)
     y_en_train = le.transform(y_train)
     y_en_test = le.transform(y_test)
-    pickle.dump(le, open('tmp/labelencoder.sav', 'wb'))
-    pickle.dump(y_en_train, open('tmp/target_train.sav', 'wb'))
-    pickle.dump(y_en_test, open('tmp/target_test.sav', 'wb'))
+    pickle.dump(le, open(save_path+'labelencoder.sav', 'wb'))
+    pickle.dump(y_en_train, open(save_path+'target_train.sav', 'wb'))
+    pickle.dump(y_en_test, open(save_path+'target_test.sav', 'wb'))
 
     print('Sampled raw data, total count: ' + str(len(articles)))
 

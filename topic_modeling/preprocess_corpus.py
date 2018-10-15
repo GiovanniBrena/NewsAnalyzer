@@ -61,5 +61,5 @@ def preprocess(sentences=None, bigram_model=None, use_bigrams=True, big_min_coun
     data_lemmatized = lemmatization(data_words, allowed_postags={'NOUN', 'ADJ', 'VERB'})
     data_lemmatized = remove_stopwords(data_lemmatized)
 
-    return data_lemmatized
+    return data_lemmatized, bigram_mod
 

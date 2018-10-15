@@ -15,6 +15,7 @@ def transform(n_topics=100, similarity_size=100):
     print('Transforming corpus to Tfidf')
     tfidf = models.TfidfModel(corpus)
     corpus_tfidf = tfidf[corpus]
+    tfidf.save('tmp/model.tfidf')
 
     print('Transforming corpus to LSI Space, num topics: ' + str(n_topics))
     lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=n_topics) # initialize an LSI transformation
@@ -22,8 +23,8 @@ def transform(n_topics=100, similarity_size=100):
     lsi.save('tmp/model.lsi')
 
     print('Transforming corpus to LDA Space, num topics: ' + str(n_topics))
-    lda = models.LdaModel(corpus_tfidf, id2word=dictionary, num_topics=n_topics,
-                          chunksize=10000, passes=5, update_every=1, minimum_probability=0.0)  # initialize an LDA transformation
+    lda = models.LdaModel(corpus_tfidf, id2word=dictionary, num_topics=n_topics, eval_every=5,
+                          chunksize=10000, passes=10, iterations=50, update_every=1, minimum_probability=0.0, alpha='auto', eta='auto')  # initialize an LDA transformation
     corpus_lda = lda[corpus_tfidf]
     lda.save('tmp/model.lda')
 

@@ -17,25 +17,27 @@ dictionary = None
 corpus = None
 label_encoder = None
 target_vector = None
-lsi = None
-index = None
+lda = None
+tfidf = None
 
 print('Loading models')
 if os.path.exists("tmp/dictionary.dict") and os.path.exists("tmp/corpus.mm"):
     dictionary = corpora.Dictionary.load('tmp/dictionary.dict')
     corpus = corpora.MmCorpus('tmp/corpus.mm')
     label_encoder = pickle.load(open('tmp/labelencoder.sav', 'rb'))
-    target_vector = pickle.load(open('tmp/targetvector.sav', 'rb'))
-    index = similarities.MatrixSimilarity.load('tmp/sim_index.index')
-    lsi = models.LsiModel.load('tmp/model.lsi')
+    target_vector = pickle.load(open('tmp/target_train.sav', 'rb'))
+    lda = models.LdaModel.load('models/LDA_model.lda')
+    index = similarities.MatrixSimilarity.load('models/sim_index_lda.index')
+    tfidf = models.TfidfModel.load('tmp/model.tfidf')
 else:
     print("Missing dictionary / corpus files.")
 
+corpus_lda = lda[tfidf[corpus]]
 vec_bow = dictionary.doc2bow(preprocessor.preprocess([doc], use_bigrams=False)[0])
-vec_lsi = lsi[vec_bow]
-print(vec_lsi)
+vec_lda = lda[vec_bow]
+print(vec_lda)
 
-sims = index[vec_lsi] # perform a similarity query against the corpus
+sims = index[vec_lda] # perform a similarity query against the corpus
 sims = sorted(sims, key=lambda item: -item[1])
 sims = sims[:N_voting]
 pp.pprint(sims) # print sorted (document number, similarity score) 2-tuples

@@ -7,6 +7,7 @@ import twitter_pipeline.news_extractor as news_extractor
 import twitter_pipeline.user_scraper as user_scraper
 import twitter_pipeline.get_tweets as get_tweets
 sys.path.append("/twitter_pipeline")
+sys.path.append("/category_classifier")
 sys.path.append("/data")
 
 # Parameters
@@ -52,7 +53,9 @@ def main():
         categories = ['world', 'politics', 'business', 'sports', 'entertainment/art', 'national/local',
                       'style/food/travel', 'science/technology/health']
         for c in categories:
-            sample = list(db.articles.aggregate([{"$match": {"category_aggregate": c, "pipelined": False, "ground_truth": True, 'source_name': {'$nin': ['The Guardian']} }},
+            sample = list(db.articles.aggregate([{"$match": {"category_aggregate": c, "pipelined": False,
+                                                             "ground_truth": True,
+                                                             'source_name': {'$nin': ['The Guardian', 'BBC', 'USA Today', 'CBC News']} }},
                                                  {"$sample": {"size": ART_PER_CATEGORY}}]))
             articles.extend(sample)
 
@@ -90,7 +93,7 @@ def main():
             print('Extracting tweets...')
             tw_total = 0
             tw_useful = 0
-            file_sources = open('data/sources.json').read()
+            file_sources = open('utils/sources.json').read()
             sources = json.loads(file_sources)
             for u in user_names:
                 count = get_tweets.user_tweets_to_mongo(u, twitter, db, sources, MAX_TWEETS)

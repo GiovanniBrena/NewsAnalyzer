@@ -1,7 +1,7 @@
 import json
 import pickle
 from textblob import TextBlob
-import category_classifier.category_classifier_v2 as category_classifier
+import category_classifier.category_classifier as category_classifier
 
 '''
 This script enrich tweets by adding a category from url (if present) and a set of keywords.
