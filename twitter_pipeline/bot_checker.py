@@ -1,8 +1,11 @@
 import botometer
 import json
+import pymongo
+from datetime import datetime
+import pprint as pp
 
 def bot_check_by_id(userId):
-    fileKeys = open('credentialsTwitter.json').read()
+    fileKeys = open('../credentials/credentialsTwitter.json').read()
     keys = json.loads(fileKeys)
 
     mashape_key = keys['mashape_key']
@@ -18,11 +21,11 @@ def bot_check_by_id(userId):
 
     # Check a single account by id
     result = bom.check_account(userId)
-    return result
+    return result['scores']
 
 
 def bot_check_by_screenname(userId):
-    fileKeys = open('credentialsTwitter.json').read()
+    fileKeys = open('../credentials/credentialsTwitter.json').read()
     keys = json.loads(fileKeys)
 
     mashape_key = keys['mashape_key']
@@ -38,5 +41,34 @@ def bot_check_by_screenname(userId):
 
     # Check a single account by id
     result = bom.check_account('@'+userId)
-    return result
+    return result['scores']
+
+
+def main():
+    mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
+    db = mongo_client["NewsAnalyzer"]
+    counter = 0
+
+    try:
+        for u in db.user.find({"bot_score": {"$exists": False}}):
+            try:
+                scores = bot_check_by_id(u['_id'])
+                db.user.update({"_id": u["_id"]}, {"$set": {"bot_score": scores}})
+                counter += 1
+                if divmod(counter, 10)[1] == 0:
+                    print('Done users: ' + str(counter))
+            except Exception as e:
+                print(e)
+                continue
+    except Exception as e:
+        print(e)
+        pass
+
+
+if __name__ == "__main__":
+    timeStart = datetime.now()
+    main()
+    timeEnd = datetime.now()
+    delta = timeEnd - timeStart
+    print('Executed in ' + str(int(delta.total_seconds())) + 's')
 

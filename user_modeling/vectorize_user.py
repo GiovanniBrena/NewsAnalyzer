@@ -30,124 +30,126 @@ import pprint as pp
 def vectorize_user(screen_name=None, user_id=None, bigr_mod=None, db=None,
                    dictionary=None, t_mod50=None, t_mod100=None, t_mod200=None, t_mod300=None):
 
-    if not user_id and not screen_name:
-        print('You need to provide a user_id or screen_name')
-        return None
+    try:
 
-    if screen_name and not user_id:
-        mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
-        db = mongo_client["NewsAnalyzer"]
-        user_id = db.user.find_one({'screen_name': screen_name})
-        if not user_id:
-            print('User not found')
+        if not user_id and not screen_name:
+            print('You need to provide a user_id or screen_name')
             return None
 
-    # list of user tweets
-    user_tweets = list(db.tweet.find({"id_user": str(user_id)}))
+        if screen_name and not user_id:
+            mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
+            db = mongo_client["NewsAnalyzer"]
+            user_id = db.user.find_one({'screen_name': screen_name})
+            if not user_id:
+                print('User not found')
+                return None
 
-    # generate pair tweet article
-    tweet_article = []
-    article_texts = []
-    RT_size = 0
-    tw_text_size = 0
-    tw_polarity = 0
-    tw_subjectivity = 0
-    for t in user_tweets:
-        try:
-            if t['RT']:
-                RT_size += 1
-            else:
-                tw_text_size += len(t['text'])
-                tw_polarity += t['sentiment_polarity']
-                tw_subjectivity += t['sentiment_subjectivity']
+        # list of user tweets
+        user_tweets = list(db.tweet.find({"id_user": str(user_id)}))
 
-            article = db.articles.find_one({"_id": t["article"]})
-            if article:
-                tweet_article.append((t, article))
-                article_texts.append(article['text'])
-        except:
-            pass
-
-    if len(user_tweets) < 1 or len(tweet_article) < 1:
-        return None
-
-    # get mean text lenght
-    try:
-        tw_text_size = tw_text_size / (len(user_tweets)-RT_size)
-        tw_polarity = tw_polarity / (len(user_tweets)-RT_size)
-        tw_subjectivity = tw_subjectivity / (len(user_tweets) - RT_size)
-
-    except ZeroDivisionError:
+        # generate pair tweet article
+        tweet_article = []
+        article_texts = []
+        RT_size = 0
         tw_text_size = 0
-    # get percentage of RT
-    RT_size = RT_size / len(user_tweets)
+        tw_polarity = 0
+        tw_subjectivity = 0
+        for t in user_tweets:
+            try:
+                if t['RT']:
+                    RT_size += 1
+                else:
+                    tw_text_size += len(t['text'])
+                    tw_polarity += t['sentiment_polarity']
+                    tw_subjectivity += t['sentiment_subjectivity']
 
-    # preprocess articles
-    pp_texts, bigram_model = preprocess(sentences=article_texts, bigram_model=bigr_mod)
+                article = db.articles.find_one({"_id": t["article"]})
+                if article:
+                    tweet_article.append((t, article))
+                    article_texts.append(article['text'])
+            except:
+                pass
 
-    # initialize vectors
-    class_vector = np.zeros(8)
-    src_vector = np.zeros(69)
-    class_counter = 0
-    src_counter = 0
-    topic_matrix_50 = []
-    topic_matrix_100 = []
-    topic_matrix_200 = []
-    topic_matrix_300 = []
+        if len(user_tweets) < 1 or len(tweet_article) < 1:
+            return None
 
-    for i in range(0, len(tweet_article)):
+        # get mean text lenght
         try:
-            t = tweet_article[i]
-            # count classes
-            cls = t[1]['category_aggregate']
-            if cls:
-                cls_index = db.category_aggregate.find_one({'name': cls})['_id']
-                class_vector[cls_index] += 1
-                class_counter += 1
+            tw_text_size = tw_text_size / (len(user_tweets)-RT_size)
+            tw_polarity = tw_polarity / (len(user_tweets)-RT_size)
+            tw_subjectivity = tw_subjectivity / (len(user_tweets) - RT_size)
 
-            # count sources
-            src = t[1]['source_name']
-            if src:
-                src_index = db.sources.find_one({'name': src})['source_index']
-                src_vector[src_index] += 1
-                src_counter += 1
+        except ZeroDivisionError:
+            tw_text_size = 0
+        # get percentage of RT
+        RT_size = RT_size / len(user_tweets)
 
-            # evaluate topics
-            d = dictionary.doc2bow(pp_texts[i])
-            dst_50 = np.zeros(50)
-            dst_100 = np.zeros(100)
-            dst_200 = np.zeros(200)
-            dst_300 = np.zeros(300)
-            for p in t_mod50.get_document_topics(d, minimum_probability=0.05):
-                dst_50[p[0]] = p[1]
-            topic_matrix_50.append(dst_50)
-            for p in t_mod100.get_document_topics(d, minimum_probability=0.05):
-                dst_100[p[0]] = p[1]
-            topic_matrix_100.append(dst_100)
-            for p in t_mod200.get_document_topics(d, minimum_probability=0.05):
-                dst_200[p[0]] = p[1]
-            topic_matrix_200.append(dst_200)
-            for p in t_mod300.get_document_topics(d, minimum_probability=0.05):
-                dst_300[p[0]] = p[1]
-            topic_matrix_300.append(dst_300)
-        except:
-            pass
+        # preprocess articles
+        pp_texts, bigram_model = preprocess(sentences=article_texts, bigram_model=bigr_mod)
 
-    n_doc = len(pp_texts)
-    # extract centroids
-    centroid_50 = np.true_divide(np.sum(topic_matrix_50, axis=0), n_doc)
-    centroid_100 = np.true_divide(np.sum(topic_matrix_100, axis=0), n_doc)
-    centroid_200 = np.true_divide(np.sum(topic_matrix_200, axis=0), n_doc)
-    centroid_300 = np.true_divide(np.sum(topic_matrix_300, axis=0), n_doc)
+        # initialize vectors
+        class_vector = np.zeros(8)
+        src_vector = np.zeros(69)
+        class_counter = 0
+        src_counter = 0
+        topic_matrix_50 = []
+        topic_matrix_100 = []
+        topic_matrix_200 = []
+        topic_matrix_300 = []
 
-    if centroid_50 == 0.0:
+        for i in range(0, len(tweet_article)):
+            try:
+                t = tweet_article[i]
+                # count classes
+                cls = t[1]['category_aggregate']
+                if cls:
+                    cls_index = db.category_aggregate.find_one({'name': cls})['_id']
+                    class_vector[cls_index] += 1
+                    class_counter += 1
+
+                # count sources
+                src = t[1]['source_name']
+                if src:
+                    src_index = db.sources.find_one({'name': src})['source_index']
+                    src_vector[src_index] += 1
+                    src_counter += 1
+
+                # evaluate topics
+                d = dictionary.doc2bow(pp_texts[i])
+                dst_50 = np.zeros(50)
+                dst_100 = np.zeros(100)
+                dst_200 = np.zeros(200)
+                dst_300 = np.zeros(300)
+                for p in t_mod50.get_document_topics(d, minimum_probability=0.05):
+                    dst_50[p[0]] = p[1]
+                topic_matrix_50.append(dst_50)
+                for p in t_mod100.get_document_topics(d, minimum_probability=0.05):
+                    dst_100[p[0]] = p[1]
+                topic_matrix_100.append(dst_100)
+                for p in t_mod200.get_document_topics(d, minimum_probability=0.05):
+                    dst_200[p[0]] = p[1]
+                topic_matrix_200.append(dst_200)
+                for p in t_mod300.get_document_topics(d, minimum_probability=0.05):
+                    dst_300[p[0]] = p[1]
+                topic_matrix_300.append(dst_300)
+            except:
+                pass
+
+        n_doc = len(pp_texts)
+        # extract centroids
+        centroid_50 = np.true_divide(np.sum(topic_matrix_50, axis=0), n_doc)
+        centroid_100 = np.true_divide(np.sum(topic_matrix_100, axis=0), n_doc)
+        centroid_200 = np.true_divide(np.sum(topic_matrix_200, axis=0), n_doc)
+        centroid_300 = np.true_divide(np.sum(topic_matrix_300, axis=0), n_doc)
+
+        # normalize classes and sources
+        if class_counter > 0:
+            class_vector = [x / class_counter for x in class_vector]
+        if src_counter > 0:
+            src_vector = [x / src_counter for x in src_vector]
+
+    except:
         return None
-
-    # normalize classes and sources
-    if class_counter > 0:
-        class_vector = [x / class_counter for x in class_vector]
-    if src_counter > 0:
-        src_vector = [x / src_counter for x in src_vector]
 
     return {'user_id': user_id, 'avg_RT': RT_size, 'avg_text_length': tw_text_size,
             'avg_polarity': tw_polarity, 'avg_subjectivity': tw_subjectivity,
@@ -176,7 +178,7 @@ def main():
     lda_model_200 = LdaModel.load(data_path + 'lda_models/200/LDA_model.lda')
     lda_model_300 = LdaModel.load(data_path + 'lda_models/300/LDA_model.lda')
 
-    for user in db.user.aggregate([{"$sample": {"size": 2000}}]):
+    for user in db.user.aggregate([{"$sample": {"size": 200000}}]):
         v_user = vectorize_user(user_id=user['_id'], db=db, bigr_mod=bigram_model, dictionary=dictionary,
                                 t_mod50=lda_model_50, t_mod100=lda_model_100, t_mod200=lda_model_200, t_mod300=lda_model_300)
         if v_user:
@@ -184,6 +186,8 @@ def main():
         counter += 1
         if divmod(counter, 10)[1] == 0:
             print('Done users: ' + str(counter))
+        if divmod(counter, 2000)[1] == 0:
+            pickle.dump(v_user_list, open('vectorized_users.sav', 'wb'))
 
     pickle.dump(v_user_list, open('vectorized_users.sav', 'wb'))
 

@@ -32,13 +32,13 @@ for t in targets:
 
 
 dictionary = corpora.Dictionary.load(data_path + 'dictionary.dict')
-lda_model = LdaModel.load(data_path + 'lda_models/50/LDA_model.lda')
+lda_model = LdaModel.load(data_path + 'lda_models/100/LDA_model.lda')
 
 topic_distribution = []
 for d in texts:
     bow = dictionary.doc2bow(d)
-    dst = np.zeros(50)
-    for p in lda_model.get_document_topics(bow, minimum_probability=0.01):
+    dst = np.zeros(100)
+    for p in lda_model.get_document_topics(bow, minimum_probability=0.05):
         dst[p[0]] = p[1]
     topic_distribution.append(dst)
 
