@@ -1,6 +1,12 @@
 from tweepy import TweepError
 import pymongo as pym
 
+"""
+    This script get user information from twitter API and
+    store it to mongodb
+
+"""
+
 def user_to_mongo(username, twitter, db):
 
     # check if user is already known

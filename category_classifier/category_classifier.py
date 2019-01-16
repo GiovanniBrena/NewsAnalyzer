@@ -9,13 +9,38 @@ from sklearn import preprocessing
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import cross_validate
+from sklearn.metrics import recall_score
+from sklearn.model_selection import cross_val_score
 import pickle
 import datetime
 import warnings
 import logging
-import topic_modeling.preprocess_corpus as preprocessor
 warnings.simplefilter("ignore", DeprecationWarning)
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+
+"""
+    This script create and evaluates different classification models
+    for the article class problem.
+    
+    FEATURES: keywords (from newspaper3k api)
+    
+    MODELS:
+    1) Naive bayes
+    2) Linear SVM
+    3) Logistic regression
+    4) Random Forest
+
+    Requires:
+    ----------
+    articles in mongodb collection
+
+    Returns:
+    ----------
+    models
+
+"""
+
 
 # PARAMETERS
 # minimum probability to accept prediction

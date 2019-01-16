@@ -5,6 +5,15 @@ import datetime
 import twitter_pipeline.category_classifier as category_classifier
 from newspaper import Article
 
+"""
+    This script scrapes and article from its url
+
+    Requires:
+    ----------
+    news_url to be scraped
+
+"""
+
 mongo_client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = mongo_client["NewsAnalyzer"]
 domain_dictionary = {}

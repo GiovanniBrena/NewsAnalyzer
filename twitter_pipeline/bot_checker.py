@@ -4,6 +4,15 @@ import pymongo
 from datetime import datetime
 import pprint as pp
 
+"""
+    This script evaluates bot probability for a given twitter user
+
+    Requires:
+    ----------
+    user_id OR screen_name
+
+"""
+
 def bot_check_by_id(userId):
     fileKeys = open('../credentials/credentialsTwitter.json').read()
     keys = json.loads(fileKeys)
@@ -51,14 +60,15 @@ def main():
 
     try:
         for u in db.user.find({"bot_score": {"$exists": False}}):
+            counter += 1
+            if divmod(counter, 10)[1] == 0:
+                print('Done users: ' + str(counter))
             try:
                 scores = bot_check_by_id(u['_id'])
                 db.user.update({"_id": u["_id"]}, {"$set": {"bot_score": scores}})
-                counter += 1
-                if divmod(counter, 10)[1] == 0:
-                    print('Done users: ' + str(counter))
             except Exception as e:
                 print(e)
+                db.user.update({"_id": u["_id"]}, {"$set": {"bot_score": None}})
                 continue
     except Exception as e:
         print(e)

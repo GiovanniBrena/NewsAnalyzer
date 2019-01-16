@@ -24,7 +24,7 @@ t_gender
 client = pymongo.MongoClient('localhost:27017')
 db = client.NewsAnalyzer
 
-fileKeys = open('../credentials/credentialsTwitter.json').read()
+fileKeys = open('../credentials.json').read()
 keys = json.loads(fileKeys)
 
 faceplusplusurldetect = "https://api-us.faceplusplus.com/facepp/v3/detect?api_key="+keys['faceplus_key']+"&api_secret="+keys['faceplus_secret']
@@ -127,7 +127,8 @@ def main():
     try:
         # for any user which has never been analyzed
         users = db.user.find({"t_f_api": {"$exists": False}})
-        print('Processing ' + str(users.count()) + ' missing users:')
+        n_users = users.count()
+        print('Processing ' + str(n_users) + ' missing users:')
         for res in users:
             try:
                 counter_general = counter_general + 1
@@ -137,7 +138,7 @@ def main():
 
                 updateMongoWithImageDemographics(res)
                 if divmod(counter_general, 10)[1] == 0:
-                    print('Done ' + str(counter_general) + ' / ' + str(users.count()))
+                    print('Done ' + str(counter_general) + ' / ' + str(n_users))
 
             except Exception as exception:
                 print('Oops!  An error occurred in loop.  Try again... line: ' + str(res), exception)

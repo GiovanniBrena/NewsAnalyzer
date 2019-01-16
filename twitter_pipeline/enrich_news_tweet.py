@@ -5,11 +5,7 @@ import category_classifier.category_classifier as category_classifier
 
 '''
 This script enrich tweets by adding a category from url (if present) and a set of keywords.
-To run enrich_news_tweet.py you have to give these options:
 
--x : input user tweet json array
--s : news sources json array
--o : output file name
 '''
 
 try:

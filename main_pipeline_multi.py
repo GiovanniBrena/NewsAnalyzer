@@ -12,26 +12,28 @@ sys.path.append("/data")
 
 # Parameters
 PIPE_ITERATIONS = 100
-
 ART_PER_CATEGORY = 10
-
 MAX_USERS = 100
 MAX_TWEETS = 500
 
-'''
-Pipeline steps:
-1) Extract twitter usernames from news url
-2) Exctract user accounts and update users collection
-3) Extract tweets + articles
-    [foreach user]
-    - filter tweets from known news sources
-        [foreach tweet]
-            - run sentiment analysis on text
-            - scrape news article
-            - categorize article
-            - update articles collection
-            - update tweet collection
-'''
+
+"""
+    This script iteratively search for users sharing news articles 
+    and extract tweets for each of those users
+    
+    Pipeline steps:
+    1) Extract twitter usernames from news url
+    2) Exctract user accounts and update users collection
+    3) Extract tweets + articles
+        [foreach user]
+        - filter tweets from known news sources
+            [foreach tweet]
+                - run sentiment analysis on text
+                - scrape news article
+                - categorize article
+                - update articles collection
+                - update tweet collection
+"""
 
 
 def main():
